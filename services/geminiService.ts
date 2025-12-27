@@ -16,7 +16,7 @@ export const getRoastPrompt = (style: RoastStyle, content: string, hasImage: boo
   7. If there is an image, refer to specific visual elements.
   
   Input to roast:
-  ${content || (hasImage ? "Review the provided image." : "Nothing provided? Your silence is as empty as your GitHub contribution graph.")}`;
+  ${content || (hasImage ? "Review the provided image." : "The user provided nothing. Roast them for their lack of contribution.")}`;
 };
 
 export async function* streamRoast(
@@ -24,17 +24,16 @@ export async function* streamRoast(
   content: string, 
   image?: ImageData
 ) {
-  // Ensure the AI client is initialized with the latest API key
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   
   if (!process.env.API_KEY) {
-    yield "Error: API_KEY is missing. Please set it in your environment variables.";
+    yield "Error: API_KEY is missing. Please set it in your Vercel environment variables.";
     return;
   }
 
   const prompt = getRoastPrompt(style, content, !!image);
-  
   const parts: any[] = [{ text: prompt }];
+  
   if (image) {
     parts.push({
       inlineData: {
@@ -49,7 +48,7 @@ export async function* streamRoast(
       model: 'gemini-3-pro-preview',
       contents: [{ parts }],
       config: {
-        temperature: 1.0, // Higher temperature for more creative insults
+        temperature: 1.0,
         topP: 0.95,
         maxOutputTokens: 2048,
       },
@@ -63,10 +62,6 @@ export async function* streamRoast(
     }
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    if (error.message?.includes("404")) {
-      yield "Error: The AI model 'gemini-3-pro-preview' was not found. Your API key might not have access to this preview model yet.";
-    } else {
-      yield "Error: My roast engine stalled. Maybe your input was so bad it broke the AI. Check your connection and API key.";
-    }
+    yield "Error: The roast engine encountered an error. Check your API key and network.";
   }
 }

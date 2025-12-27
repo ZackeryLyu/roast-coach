@@ -1,20 +1,12 @@
 
-export interface RoastResponse {
-  score: number;
-  comment: string;
-  nickName: string;
-  tags: string[];
+export enum RoastStyle {
+  SAVAGE = 'Savage',
+  PROFESSIONAL = 'Passive Aggressive Professional',
+  PUNNY = 'Dad Jokes / Punny',
+  TOUGH_LOVE = 'Tough Love Coach'
 }
 
-export enum AppState {
-  IDLE = 'IDLE',
-  RECORDING = 'RECORDING',
-  ANALYZING = 'ANALYZING',
-  RESULT = 'RESULT'
-}
-
-export interface CapturedMedia {
-  dataUrl: string;
-  type: 'image' | 'video';
+export interface ImageData {
+  base64: string;
   mimeType: string;
 }

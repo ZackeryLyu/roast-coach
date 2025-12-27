@@ -1,8 +1,7 @@
 {
-  "name": "RoastCoach - 毒舌运动教练",
-  "description": "一个专门吐槽你健身动作的AI应用。通过相机捕捉你的运动瞬间，让毒舌AI给你最扎心的评价，并一键分享朋友圈。",
+  "name": "Roast Coach AI",
+  "description": "A high-performance roasting application that critiques your code, designs, or life choices using Gemini 3's wit and reasoning.",
   "requestFramePermissions": [
-    "camera",
-    "microphone"
+    "camera"
   ]
 }
