@@ -16,7 +16,7 @@ export const getRoastPrompt = (style: RoastStyle, content: string, hasImage: boo
   7. If there is an image, refer to specific visual elements.
   
   Input to roast:
-  ${content || (hasImage ? "Review the provided image." : "The user provided nothing. Roast them for their lack of contribution.")}`;
+  ${content || (hasImage ? "Review the provided image." : "The user provided nothing. Roast them for their sheer lack of presence.")}`;
 };
 
 export async function* streamRoast(
@@ -24,12 +24,11 @@ export async function* streamRoast(
   content: string, 
   image?: ImageData
 ) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // Use process.env.API_KEY which is injected automatically or via selection
+  const apiKey = process.env.API_KEY || '';
   
-  if (!process.env.API_KEY) {
-    yield "Error: API_KEY is missing. Please set it in your Vercel environment variables.";
-    return;
-  }
+  // Create a new instance right before making an API call to ensure latest key is used
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = getRoastPrompt(style, content, !!image);
   const parts: any[] = [{ text: prompt }];
@@ -61,7 +60,8 @@ export async function* streamRoast(
       }
     }
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    yield "Error: The roast engine encountered an error. Check your API key and network.";
+    console.error("Gemini Streaming Error:", error);
+    // Rethrow to allow component-level handling (e.g., triggering key selection)
+    throw error;
   }
 }
