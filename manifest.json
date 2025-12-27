@@ -1,0 +1,16 @@
+
+{
+  "name": "RoastCoach 毒舌运动教练",
+  "short_name": "RoastCoach",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3669/3669910.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
