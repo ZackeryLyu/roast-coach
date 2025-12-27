@@ -6,10 +6,16 @@ import RoastOutput from './components/RoastOutput';
 import { RoastStyle, ImageData } from './types';
 import { streamRoast } from './services/geminiService';
 
-// Fix: Use the predefined AIStudio type for the window.aistudio property to resolve naming and modifier conflicts.
 declare global {
+  // Define the AIStudio interface for platform integration.
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
   interface Window {
-    aistudio: AIStudio;
+    // Modifier conflict fix: Mark as optional to match platform's global window definition.
+    aistudio?: AIStudio;
   }
 }
 
@@ -21,9 +27,9 @@ const App: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [needsKey, setNeedsKey] = useState(false);
 
-  // Check if an API key has been selected via the AI Studio bridge on mount
   useEffect(() => {
     const checkKey = async () => {
+      // Check if the user has already selected an API key via the platform dialog.
       if (window.aistudio) {
         try {
           const hasKey = await window.aistudio.hasSelectedApiKey();
@@ -40,7 +46,7 @@ const App: React.FC = () => {
     if (window.aistudio) {
       try {
         await window.aistudio.openSelectKey();
-        // Assume success after triggering the dialog as per race condition guidelines
+        // Mitigate race condition: assume selection was successful after triggering the dialog.
         setNeedsKey(false);
       } catch (e) {
         console.error("Error opening key selector:", e);
@@ -63,14 +69,22 @@ const App: React.FC = () => {
         setRoastContent(fullText);
       }
     } catch (error: any) {
-      console.error("Failed to fetch roast:", error);
+      console.error("App Roast Error:", error);
       const errorMsg = error.message || "";
       
-      if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API_KEY")) {
+      if (errorMsg === "MISSING_API_KEY") {
+        if (window.aistudio) {
+          setNeedsKey(true);
+          setRoastContent("Selection required: Please select an API key using the button above to continue.");
+        } else {
+          setRoastContent("Deployment Error: API_KEY is missing from your environment variables.");
+        }
+      } else if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API_KEY")) {
+        // Reset key selection state and prompt for re-selection if the key is invalid or not found.
         setNeedsKey(true);
-        setRoastContent("Invalid API key or selection required. Please re-configure your API key using the button above.");
+        setRoastContent("The API key provided is invalid or doesn't have access to this model. Please re-select or check your credentials.");
       } else {
-        setRoastContent("The AI is currently speechless. This usually happens when the API key is missing from environment variables or the AI Studio selection is incomplete.");
+        setRoastContent(`Roast Engine Error: ${errorMsg || "The AI is currently speechless. Check your network or API quota."}`);
       }
     } finally {
       setIsStreaming(false);
@@ -79,14 +93,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-50 pb-20 relative overflow-x-hidden">
-      {/* Decorative background elements */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-rose-500/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
       
       <div className="relative z-10 container mx-auto px-4 max-w-5xl">
         <Header />
         
-        {/* API Key Selection Prompt for Gemini 3 Models */}
-        {needsKey && (
+        {needsKey && window.aistudio && (
           <div className="max-w-3xl mx-auto mb-8 p-6 glass-panel rounded-2xl border-rose-500/30 flex flex-col items-center text-center animate-in fade-in zoom-in duration-300">
             <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,13 +107,12 @@ const App: React.FC = () => {
             </div>
             <h2 className="text-xl font-bold mb-2">Gemini 3 Key Required</h2>
             <p className="text-zinc-400 text-sm mb-6 max-w-md">
-              High-performance reasoning models require a selected API key. 
-              Please select a key from a paid GCP project. 
-              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-rose-400 hover:underline ml-1">Learn more</a>
+              You are running in a restricted environment. Please select a paid project API key to unleash the full power of Gemini 3.
+              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-rose-400 hover:underline ml-1">Docs</a>
             </p>
             <button 
               onClick={handleOpenSelectKey}
-              className="px-8 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-rose-500/25 active:scale-95"
+              className="px-8 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95"
             >
               Select API Key
             </button>
