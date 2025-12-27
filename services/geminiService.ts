@@ -20,20 +20,31 @@ export const getRoastPrompt = (style: RoastStyle, content: string, hasImage: boo
 };
 
 /**
- * Streams a roast critique from the Gemini API using the specified style and content.
+ * Helper to safely get the API key from the environment.
+ */
+const getApiKey = (): string | undefined => {
+  try {
+    return process.env.API_KEY;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Streams a roast critique from the Gemini API.
  */
 export async function* streamRoast(
   style: RoastStyle, 
   content: string, 
   image?: ImageData
 ) {
-  const apiKey = process.env.API_KEY;
+  const apiKey = getApiKey();
   
-  if (!apiKey || apiKey === "undefined" || apiKey === "") {
-    throw new Error("MISSING_API_KEY");
+  if (!apiKey) {
+    throw new Error("API_KEY_NOT_FOUND");
   }
   
-  // Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key.
+  // Create a new GoogleGenAI instance right before the call
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = getRoastPrompt(style, content, !!image);
@@ -55,7 +66,7 @@ export async function* streamRoast(
       config: {
         temperature: 1.0,
         topP: 0.95,
-        // Avoid setting maxOutputTokens to prevent potential thinking budget issues with Gemini 3 models.
+        // No maxOutputTokens set to allow model-determined thinking/generation balance
       },
     });
 
